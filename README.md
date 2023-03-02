@@ -13,7 +13,7 @@ This is a Telegram bot that allows you to interact with ChatGPT, an advanced cha
 - `/help` – Show help
 
 ## Setup
-1. Create your [OpenAI API](https://chat.openai.com/auth/login) account
+1. Create your [OpenAI](https://chat.openai.com/auth/login) account
 
 2. Get your Telegram bot token from [@BotFather](https://t.me/BotFather)
 
