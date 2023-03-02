@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 HELP_MESSAGE = """Commands:
 ⚪ /retry – Regenerate last bot answer
-⚪ /new – Start new dialog
+⚪ /new – Start new conversation
 ⚪ /mode – Select chat mode
 ⚪ /help – Show help
 """
