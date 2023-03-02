@@ -1,0 +1,6 @@
+loguru==0.6.0
+pymongo==4.3.3
+python-dotenv==1.0.0
+python_telegram_bot==20.0a0
+PyYAML==6.0
+revChatGPT==2.3.21

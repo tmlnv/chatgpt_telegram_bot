@@ -1,0 +1,5 @@
+telegram_token: ""
+openai_login: ""
+openai_password: ""
+allowed_telegram_usernames: []  # if empty, the bot is available to anyone
+new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
