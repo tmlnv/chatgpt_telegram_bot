@@ -42,6 +42,10 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
             first_name=user.first_name,
             last_name=user.last_name
         )
+        db.start_new_dialog(user.id)
+
+    if db.get_user_attribute(user.id, "current_dialog_id") is None:
+        db.start_new_dialog(user.id)
 
 
 async def start_handle(update: Update, context: CallbackContext):
@@ -93,7 +97,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     # new dialog timeout
     if use_new_dialog_timeout:
-        if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout:
+        if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds \
+                > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
             db.start_new_dialog(user_id)
             await update.message.reply_text("Starting new dialog due to timeout ✅")
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
