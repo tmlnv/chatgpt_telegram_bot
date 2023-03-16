@@ -6,9 +6,16 @@ import traceback
 from datetime import datetime
 
 import telegram
-from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update,
+    User,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    BotCommand
+)
 from telegram.constants import ParseMode
 from telegram.ext import (
+    Application,
     ApplicationBuilder,
     CallbackContext,
     CommandHandler,
@@ -218,10 +225,19 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
         await context.bot.send_message(update.effective_chat.id, "Some error in error handler")
 
 
+async def post_init(application: Application):
+    await application.bot.set_my_commands([
+        BotCommand("/new", "Start new conversation"),
+        BotCommand("/mode", "Select chat mode"),
+        BotCommand("/retry", "Regenerate response for previous query"),
+        BotCommand("/help", "Show help message"),
+    ])
+
 def run_bot() -> None:
     application = (
         ApplicationBuilder()
         .token(config.telegram_token)
+        .post_init(post_init)
         .build()
     )
 
