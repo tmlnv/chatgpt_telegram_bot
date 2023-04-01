@@ -1,6 +1,8 @@
 loguru==0.6.0
 pymongo==4.3.3
-python-dotenv==1.0.0
-python_telegram_bot==20.0a0
+python-dotenv==0.21.0
+python-telegram-bot[rate-limiter]==20.1
 PyYAML==6.0
 revChatGPT
+tiktoken>=0.3.0
+pydub==0.25.1

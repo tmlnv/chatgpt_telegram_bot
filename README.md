@@ -22,6 +22,7 @@ This is a Telegram bot that allows you to interact with ChatGPT, an advanced cha
 mv config/config.example.yml config/config.yml
 mv config/config.example.env config/config.env
 ```
+UPD 01.04.23: config now works only via [OpenAi access_token](https://chat.openai.com/api/auth/session)
 
 And now **run**:
 
