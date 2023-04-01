@@ -179,6 +179,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 else:
                     raise ValueError(f"Streaming status {status} is unknown")
 
+                print('I is:', i)
                 answer = answer[:4096]  # telegram message limit
                 if i == 0:  # send first message (then it'll be edited if message streaming is enabled)
                     try:
@@ -194,22 +195,26 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                             sent_message = await update.message.reply_text(answer)
                 else:  # edit sent message
                     # update only when 100 new symbols are ready
+                    print('INSIDE OF ELSE')
                     if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
                         continue
 
                     try:
+                        print('INSIDE OF TRY')
                         await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id,
                                                             message_id=sent_message.message_id, parse_mode=parse_mode)
                     except telegram.error.BadRequest as e:
                         if str(e).startswith("Message is not modified"):
                             continue
+                        elif str(e).startswith("Message text is empty"):
+                            break
                         else:
                             await context.bot.edit_message_text(answer, chat_id=sent_message.chat_id,
                                                                 message_id=sent_message.message_id)
 
                     await asyncio.sleep(1)  # wait a bit to avoid flooding
 
-                prev_answer = answer
+                prev_answer += answer
 
             # update user data
             new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
