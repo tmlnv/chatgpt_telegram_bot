@@ -192,7 +192,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 try:
                     print('GOT INTO TRY')
                     await context.bot.edit_message_text(
-                        answer,
+                        text=answer,
                         chat_id=placeholder_message.chat_id,
                         message_id=placeholder_message.message_id,
                         parse_mode=parse_mode
@@ -203,14 +203,14 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                         continue
                     else:
                         await context.bot.edit_message_text(
-                            answer,
+                            text=answer,
                             chat_id=placeholder_message.chat_id,
                             message_id=placeholder_message.message_id
                         )
 
-                await asyncio.sleep(1)  # wait a bit to avoid flooding
+                await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
-                prev_answer += answer
+                prev_answer = answer
 
             # update user data
             new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
