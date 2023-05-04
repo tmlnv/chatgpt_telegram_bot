@@ -168,30 +168,36 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                 gen = fake_gen()
 
             prev_answer = ""
+            answer = ""
             async for gen_item in gen:
-                status = gen_item[0]
-                print(status)
-                if status == "not_finished":
-                    status, answer = gen_item
-                    print('PRINT STATEMENT WHEN STATUS NOT_FINISHED', status, answer)
-                elif status == "finished":
-                    status, answer, prompt, n_first_dialog_messages_removed = gen_item
-                    print('PRINT STATEMENT WHEN STATUS !!!!FINISHED!!!!', status, answer)
-                else:
-                    raise ValueError(f"Streaming status {status} is unknown")
+                status, _, prompt, n_first_dialog_messages_removed = gen_item
+                answer += gen_item[1]
+                print(str(status) + " ----- " + str(answer) + " ----- " + " ----- " + str(n_first_dialog_messages_removed))
+                # if status == "not_finished":
+                #     status, answer = gen_item
+                #     print('PRINT STATEMENT WHEN STATUS NOT_FINISHED', status, answer)
+                # elif status == "finished":
+                #     status, answer, prompt, n_first_dialog_messages_removed = gen_item
+                #     print('PRINT STATEMENT WHEN STATUS !!!!FINISHED!!!!', status, answer)
+                # else:
+                #     raise ValueError(f"Streaming status {status} is unknown")
 
                 answer = answer[:4096]  # telegram message limit
+
                 # update only when 100 new symbols are ready
                 if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
+                    print('INSIDE OF ABS(LEN)')
                     continue
 
                 try:
+                    print('GOT INTO TRY')
                     await context.bot.edit_message_text(
                         answer,
                         chat_id=placeholder_message.chat_id,
                         message_id=placeholder_message.message_id,
                         parse_mode=parse_mode
                     )
+                    print('EDITED MESSAGE IN TRY')
                 except telegram.error.BadRequest as e:
                     if str(e).startswith("Message is not modified"):
                         continue
@@ -202,7 +208,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                             message_id=placeholder_message.message_id
                         )
 
-                await asyncio.sleep(0.01)  # wait a bit to avoid flooding
+                await asyncio.sleep(1)  # wait a bit to avoid flooding
 
                 prev_answer += answer
 

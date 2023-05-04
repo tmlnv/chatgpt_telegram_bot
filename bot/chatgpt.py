@@ -31,7 +31,8 @@ class ChatGPT:
             prev_text = ""
             for data in self.chatbot.ask(prompt):
                 answer = data["message"][len(prev_text):]
-                yield "not_finished", answer
+                n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
+                yield "not_finished", answer, prompt, n_first_dialog_messages_removed
                 prev_text = data["message"]
                 cntr += 1
                 if cntr % 25 == 0:
