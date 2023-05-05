@@ -3,13 +3,14 @@ This is a Telegram bot that allows you to interact with ChatGPT, an advanced cha
 
 ## Features
 - Code highlighting
-- Special chat modes: 👩🏼‍🎓 Assistant, 👩🏼‍💻 Code Assistant, 📝 Text Improver
+- Chat modes: 🛎 Assistant, 💻 Code Assistant, 📝 Text Improver , ⚫ Blank
 - List of allowed Telegram users
+- Message streaming
 
 ## Bot commands
-- `/retry` – Regenerate last bot answer
 - `/new` – Start new conversation
 - `/mode` – Select chat mode
+- `/retry` – Regenerate last bot answer
 - `/help` – Show help
 
 ## Setup
