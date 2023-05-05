@@ -1,8 +1,4 @@
-import os
-import logging
 import asyncio
-import pydub
-import tempfile
 import html
 import json
 import logging
@@ -39,10 +35,10 @@ logger = logging.getLogger(__name__)
 user_semaphores = {}
 
 HELP_MESSAGE = """Commands:
-⚪ /retry – Regenerate last bot answer
-⚪ /new – Start new conversation
-⚪ /mode – Select chat mode
-⚪ /help – Show help
+/new – 🆕 Start new conversation
+/mode – ↕️ Select chat mode
+/retry – 🔁 Regenerate last bot answer
+/help – ℹ️ Show help
 """
 
 
@@ -76,10 +72,10 @@ async def start_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
 
-    reply_text = "Hi! I'm <b>ChatGPT</b> bot 🤖\n\n"
+    reply_text = "This is the <b>ChatGPT</b> Telegram Bot, powered by advanced AI language processing.\n\n"
     reply_text += HELP_MESSAGE
-
-    reply_text += "\nAnd now... ask me anything!"
+    reply_text += "\nIt can provide personalized recommendations and real-time responses to a wide range of" \
+                  " natural language queries. Enjoy!"
 
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
 
@@ -101,7 +97,7 @@ async def retry_handle(update: Update, context: CallbackContext):
 
     dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
     if len(dialog_messages) == 0:
-        await update.message.reply_text("No message to retry 🤷‍♂️")
+        await update.message.reply_text("🤷‍♂️ No message to retry")
         return
 
     last_dialog_message = dialog_messages.pop()
@@ -131,7 +127,8 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             ).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
                 await update.message.reply_text(
-                    f'Starting new dialog due to timeout (<b>{db.get_user_attribute(user_id, "current_chat_mode")}</b> mode) ✅',
+                    f'💬 Starting new dialog due to timeout (<b>{db.get_user_attribute(user_id, "current_chat_mode")}'
+                    f'</b> mode).',
                     parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
@@ -172,32 +169,20 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             async for gen_item in gen:
                 status, _, prompt, n_first_dialog_messages_removed = gen_item
                 answer += gen_item[1]
-                print(str(status) + " ----- " + str(answer) + " ----- " + " ----- " + str(n_first_dialog_messages_removed))
-                # if status == "not_finished":
-                #     status, answer = gen_item
-                #     print('PRINT STATEMENT WHEN STATUS NOT_FINISHED', status, answer)
-                # elif status == "finished":
-                #     status, answer, prompt, n_first_dialog_messages_removed = gen_item
-                #     print('PRINT STATEMENT WHEN STATUS !!!!FINISHED!!!!', status, answer)
-                # else:
-                #     raise ValueError(f"Streaming status {status} is unknown")
 
                 answer = answer[:4096]  # telegram message limit
 
                 # update only when 100 new symbols are ready
                 if abs(len(answer) - len(prev_answer)) < 100 and status != "finished":
-                    print('INSIDE OF ABS(LEN)')
                     continue
 
                 try:
-                    print('GOT INTO TRY')
                     await context.bot.edit_message_text(
                         text=answer,
                         chat_id=placeholder_message.chat_id,
                         message_id=placeholder_message.message_id,
                         parse_mode=parse_mode
                     )
-                    print('EDITED MESSAGE IN TRY')
                 except telegram.error.BadRequest as e:
                     if str(e).startswith("Message is not modified"):
                         continue
@@ -229,9 +214,12 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
         # send message if some messages were removed from the context
         if n_first_dialog_messages_removed > 0:
             if n_first_dialog_messages_removed == 1:
-                text = "✍️ <i>Note:</i> Your current dialog is too long, so your <b>first message</b> was removed from the context.\n Send /new command to start new dialog"
+                text = "✂️ <i>Note:</i> Your current dialog is too long, so your <b>first message</b> was removed" \
+                       " from the context.\n Send /new command to start new dialog."
             else:
-                text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n Send /new command to start new dialog"
+                text = f"✂️ <i>Note:</i> Your current dialog is too long, so" \
+                       f" <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n " \
+                       f"Send /new command to start new dialog."
             await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
@@ -256,7 +244,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     db.start_new_dialog(user_id)
-    await update.message.reply_text("Starting new dialog ✅")
+    await update.message.reply_text("💬 Starting new dialog.")
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
     await update.message.reply_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
