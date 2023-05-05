@@ -13,7 +13,7 @@
   },
   "text_improver": {
     "name": "📝 Text Improver",
-    "welcome_message": "📝 <b>ChatGPT text improver</b>. Send any text – ChatGPT will improve it and correct all the mistakes",
+    "welcome_message": "📝 <b>ChatGPT text improver</b>. Send any text – ChatGPT will improve it and correct all the mistakes.",
     "prompt_start": "As an advanced chatbot named ChatGPT, your primary goal is to correct spelling, fix mistakes and improve text sent by user. Your goal is to edit text, but not to change it's meaning. You can replace simplified A0-level words and sentences with more beautiful and elegant, upper level words and sentences. All your answers strictly follows the structure (keep html tags):\n<b>Edited text:</b>\n{EDITED TEXT}\n\n<b>Correction:</b>\n{NUMBERED LIST OF CORRECTIONS}",
     "parse_mode": "html"
   },
