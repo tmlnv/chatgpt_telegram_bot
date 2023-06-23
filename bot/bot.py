@@ -27,10 +27,10 @@ from telegram.ext import (
 
 import chatgpt
 import config
-import database
+from database import Database
 
 # setup
-db = database.Database()
+db = Database()
 logger = logging.getLogger(__name__)
 user_semaphores = {}
 
@@ -127,7 +127,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             ).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
                 db.start_new_dialog(user_id)
                 await update.message.reply_text(
-                    f'💬 Starting new dialog due to timeout (<b>{db.get_user_attribute(user_id, "current_chat_mode")}'
+                    f'💬 Starting new dialog due to timeout (<b>{chatgpt.CHAT_MODES[chat_mode]["name"]}'
                     f'</b> mode).',
                     parse_mode=ParseMode.HTML)
         db.set_user_attribute(user_id, "last_interaction", datetime.now())
