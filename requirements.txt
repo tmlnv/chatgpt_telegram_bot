@@ -5,4 +5,3 @@ python-telegram-bot[rate-limiter]==20.1
 PyYAML==6.0
 revChatGPT
 tiktoken>=0.3.0
-pydub==0.25.1

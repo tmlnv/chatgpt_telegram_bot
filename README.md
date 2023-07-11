@@ -18,12 +18,11 @@ This is a Telegram bot that allows you to interact with ChatGPT, an advanced cha
 
 2. Get your Telegram bot token from [@BotFather](https://t.me/BotFather)
 
-3. Edit `config/config.example.yml` to set your telegram token and OpenAI credentials and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
+3. Edit `config/config.example.yml` to set your telegram token and OpenAI credentials (email and password or [OpenAI access_token](https://chat.openai.com/api/auth/session)) and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
 ```bash
 mv config/config.example.yml config/config.yml
 mv config/config.example.env config/config.env
 ```
-UPD 01.04.23: config now works only via [OpenAi access_token](https://chat.openai.com/api/auth/session)
 
 And now **run**:
 

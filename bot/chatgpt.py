@@ -13,6 +13,10 @@ class ChatGPT:
     def __init__(self):
         self.chatbot = Chatbot(
             config={
+                "email": config.openai_login,
+                "password": config.openai_password
+            } if config.openai_login and config.openai_password else
+            {
                 "access_token": config.openai_access_token
             }
         )
