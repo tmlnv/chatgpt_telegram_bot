@@ -65,8 +65,8 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
     if user.id not in user_semaphores:
         user_semaphores[user.id] = asyncio.Semaphore(1)
 
-    if db.get_user_attribute(user.id, "current_model") is None:
-        db.set_user_attribute(user_id=user.id, key="current_model", value="assistant")
+    if db.get_user_attribute(user.id, "current_chat_mode") is None:
+        db.set_user_attribute(user_id=user.id, key="current_chat_mode", value="assistant")
 
     if db.get_user_attribute(user.id, "n_generated_images") is None:
         db.set_user_attribute(user_id=user.id, key="n_generated_images", value=0)
@@ -300,6 +300,13 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
 
     # token usage
     db.set_user_attribute(user_id, "n_generated_images", 1 + db.get_user_attribute(user_id, "n_generated_images"))
+    # update user data
+    new_dialog_message = {"user": message, "bot": image_url, "date": datetime.now()}
+    db.set_dialog_messages(
+        user_id,
+        db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
+        dialog_id=None
+    )
 
     await update.message.chat.send_action(action="upload_photo")
     await update.message.reply_photo(image_url, parse_mode=ParseMode.HTML)
