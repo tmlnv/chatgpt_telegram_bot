@@ -44,7 +44,9 @@ class Database:
             "first_seen": datetime.now(),
 
             "current_dialog_id": None,
-            "current_chat_mode": "assistant"
+            "current_chat_mode": "assistant",
+
+            "n_generated_images": 0
         }
 
         if not self.check_if_user_exists(user_id):

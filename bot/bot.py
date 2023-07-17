@@ -28,6 +28,7 @@ from telegram.ext import (
 import chatgpt
 import config
 from database import Database
+import kandinsky_replicate
 
 # setup
 db = Database()
@@ -63,6 +64,12 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 
     if user.id not in user_semaphores:
         user_semaphores[user.id] = asyncio.Semaphore(1)
+
+    if db.get_user_attribute(user.id, "current_model") is None:
+        db.set_user_attribute(user_id=user.id, key="current_model", value="assistant")
+
+    if db.get_user_attribute(user.id, "n_generated_images") is None:
+        db.set_user_attribute(user_id=user.id, key="n_generated_images", value=0)
 
 
 async def start_handle(update: Update, context: CallbackContext):
@@ -118,6 +125,10 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+
+    if chat_mode == "image":
+        await generate_image_handle(update, context, message=message)
+        return
 
     async with user_semaphores[user_id]:
         # new dialog timeout
@@ -264,6 +275,34 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+
+
+async def generate_image_handle(update: Update, context: CallbackContext, message=None):
+    await register_user_if_not_exists(update, context, update.message.from_user)
+    if await is_previous_message_not_answered_yet(update, context):
+        return
+
+    user_id = update.message.from_user.id
+    db.set_user_attribute(user_id, "last_interaction", datetime.now())
+
+    await update.message.chat.send_action(action="upload_photo")
+
+    message = message or update.message.text
+
+    kandinsky_instance = kandinsky_replicate.KandinskyReplicate()
+
+    try:
+        image_url = await kandinsky_instance.generate_image(prompt=message)
+    except Exception as e:
+        text = f"Something went wrong while generating image via <b>Kandinsky</b> for you. Reason:\n{e}"
+        await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+        return
+
+    # token usage
+    db.set_user_attribute(user_id, "n_generated_images", 1 + db.get_user_attribute(user_id, "n_generated_images"))
+
+    await update.message.chat.send_action(action="upload_photo")
+    await update.message.reply_photo(image_url, parse_mode=ParseMode.HTML)
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):
