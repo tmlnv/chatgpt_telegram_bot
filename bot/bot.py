@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import html
 import json
 import logging
@@ -28,7 +29,7 @@ from telegram.ext import (
 import chatgpt
 import config
 from database import Database
-import kandinsky_replicate
+import async_kandinsky_fusion_brain
 
 # setup
 db = Database()
@@ -289,10 +290,24 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
 
     message = message or update.message.text
 
-    kandinsky_instance = kandinsky_replicate.KandinskyReplicate()
+    kandinsky_instance = async_kandinsky_fusion_brain.FusionBrainAPI()
+
+    base64_image = None
 
     try:
-        image_url = await kandinsky_instance.generate_image(prompt=message)
+        uuid = await kandinsky_instance.generate_image(query=message)
+        if uuid:
+            image_data = None
+            while image_data is None:
+                await asyncio.sleep(10)
+                image_data = await kandinsky_instance.get_image(uuid)
+            if image_data:
+                image_bytes = await kandinsky_instance.get_image_bytes(image_data)
+                if image_bytes is None:
+                    raise Exception("No image data received from the server.")
+                base64_image = base64.b64encode(image_bytes.getvalue()).decode('utf-8')
+            else:
+                raise Exception("Failed to get image data.")
     except Exception as e:
         text = f"Something went wrong while generating image via <b>Kandinsky</b> for you. Reason:\n{e}"
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -301,7 +316,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
     # token usage
     db.set_user_attribute(user_id, "n_generated_images", 1 + db.get_user_attribute(user_id, "n_generated_images"))
     # update user data
-    new_dialog_message = {"user": message, "bot": image_url, "date": datetime.now()}
+    new_dialog_message = {"user": message, "bot": base64_image, "date": datetime.now()}
     db.set_dialog_messages(
         user_id,
         db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
@@ -309,7 +324,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
     )
 
     await update.message.chat.send_action(action="upload_photo")
-    await update.message.reply_photo(image_url, parse_mode=ParseMode.HTML)
+    await update.message.reply_photo(image_bytes, parse_mode=ParseMode.HTML)
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):
