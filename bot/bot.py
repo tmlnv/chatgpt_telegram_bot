@@ -29,7 +29,7 @@ from telegram.ext import (
 import chatgpt
 import config
 from database import Database
-import async_kandinsky_fusion_brain
+import kandinsky_fusion_brain
 
 # setup
 db = Database()
@@ -290,7 +290,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
 
     message = message or update.message.text
 
-    kandinsky_instance = async_kandinsky_fusion_brain.FusionBrainAPI()
+    kandinsky_instance = kandinsky_fusion_brain.FusionBrainAPI()
 
     base64_image = None
 
