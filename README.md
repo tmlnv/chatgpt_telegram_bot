@@ -3,9 +3,10 @@ This is a Telegram bot that allows you to interact with ChatGPT, an advanced cha
 
 ## Features
 - Code highlighting
-- Chat modes: 🛎 Assistant, 💻 Code Assistant, 📝 Text Improver , ⚫ Blank
+- Chat modes: 🛎 Assistant, 💻 Code Assistant, 📝 Text Improver , ⚫ Blank, 🖼️ Image
 - List of allowed Telegram users
 - Message streaming
+- Image generation via Kandinsky 2.2
 
 ## Bot commands
 - `/new` – Start new conversation
@@ -34,3 +35,5 @@ docker-compose --env-file config/config.env up --build
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)
 2. [*Reverse Engineered ChatGPT API by OpenAI*](https://github.com/acheong08/ChatGPT)
 3. [*OpenAI Davinci API Telegram Bot*](https://github.com/karfly/chatgpt_telegram_bot)
+4. [*Kandinsky 2.2*](https://huggingface.co/kandinsky-community/kandinsky-2-2-decoder)
+
