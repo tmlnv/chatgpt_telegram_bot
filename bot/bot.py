@@ -313,7 +313,7 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
         return
 
-    # token usage
+    # image usage
     db.set_user_attribute(user_id, "n_generated_images", 1 + db.get_user_attribute(user_id, "n_generated_images"))
     # update user data
     new_dialog_message = {"user": message, "bot": base64_image, "date": datetime.now()}
