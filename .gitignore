@@ -134,3 +134,4 @@ config/config.env
 .DS_Store
 .idea/
 mongodb/
+*.db

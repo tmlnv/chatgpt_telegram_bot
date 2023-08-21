@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import base64
 import html
@@ -28,11 +29,12 @@ from telegram.ext import (
 
 import chatgpt
 import config
-from database import Database
+import database_mongo
+import database_sqlite
 import kandinsky_fusion_brain
 
 # setup
-db = Database()
+db = None
 logger = logging.getLogger(__name__)
 user_semaphores = {}
 
@@ -103,8 +105,8 @@ async def retry_handle(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
-    dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
-    if len(dialog_messages) == 0:
+    last_dialog_message = db.remove_dialog_last_message(user_id)
+    if last_dialog_message is None:
         await update.message.reply_text("🤷‍♂️ No message to retry")
         return
 
@@ -211,11 +213,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
             # update user data
             new_dialog_message = {"user": message, "bot": answer, "date": datetime.now()}
-            db.set_dialog_messages(
-                user_id,
-                db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
-                dialog_id=None
-            )
+            db.append_dialog_message(user_id, new_dialog_message, dialog_id=None)
 
         except Exception as e:
             error_text = f"Something went wrong during completion. Reason: {e}"
@@ -383,6 +381,15 @@ async def post_init(application: Application):
 
 
 def run_bot() -> None:
+    global db
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--database", type=str)
+    curr_args = parser.parse_args()
+    if curr_args.database == "sqlite":
+     db = database_sqlite.SqliteDataBase(config.sqlite_database_uri)
+    else:
+     db = database_mongo.MongoDatabase(config.mongodb_uri)
+
     application = (
         ApplicationBuilder()
         .token(config.telegram_token)

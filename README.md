@@ -31,6 +31,13 @@ And now **run**:
 docker-compose --env-file config/config.env up --build
 ```
 
+Or, using the sqlite, run:
+ ```bash
+ docker-compose -f docker-compose-sqlite.yml --env-file config/config.env up --build
+ ```
+
+
+
 ## References
 1. [*Build ChatGPT from GPT-3*](https://learnprompting.org/docs/applied_prompting/build_chatgpt)
 2. [*Reverse Engineered ChatGPT API by OpenAI*](https://github.com/acheong08/ChatGPT)
