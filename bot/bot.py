@@ -312,13 +312,11 @@ async def generate_image_handle(update: Update, context: CallbackContext, messag
         return
 
     # image usage
-    db.set_user_attribute(user_id, "n_generated_images", 1 + db.get_user_attribute(user_id, "n_generated_images"))
     # update user data
     new_dialog_message = {"user": message, "bot": base64_image, "date": datetime.now()}
-    db.set_dialog_messages(
-        user_id,
-        db.get_dialog_messages(user_id, dialog_id=None) + [new_dialog_message],
-        dialog_id=None
+    db.append_dialog_message(user_id, new_dialog_message, dialog_id=None)
+    db.set_user_attribute(
+        user_id=user_id, key="n_generated_images", value=1 + db.get_user_attribute(user_id, "n_generated_images")
     )
 
     await update.message.chat.send_action(action="upload_photo")

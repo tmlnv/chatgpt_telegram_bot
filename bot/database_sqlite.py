@@ -86,7 +86,7 @@ class SqliteDataBase:
                 time_now,  # first_seen
                 None,  # current_dialog_id
                 "assistant",  # current_chat_mode
-                "n_generated_images"
+                0  # n_generated_images
             ])
 
     def start_new_dialog(self, user_id: int):
