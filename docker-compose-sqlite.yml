@@ -21,8 +21,8 @@ services:
       dockerfile: DockerfileSqlite
     volumes:
       - sqlite-volume:/data
-    environment:
-      - SQLITE_DATABASE=sqlite.db
+    env_file:
+      - config/config.env
 
 volumes:
   sqlite-volume:
