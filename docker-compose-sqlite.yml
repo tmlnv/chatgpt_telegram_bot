@@ -8,3 +8,21 @@ services:
     build:
       context: "."
       dockerfile: Dockerfile
+    volumes:
+      - sqlite-volume:/code/db
+
+  sqlite_web:
+    container_name: sqlite_web
+    restart: always
+    ports:
+      - "8080:8080"
+    build:
+      context: "."
+      dockerfile: DockerfileSqlite
+    volumes:
+      - sqlite-volume:/data
+    environment:
+      - SQLITE_DATABASE=sqlite.db
+
+volumes:
+  sqlite-volume:
