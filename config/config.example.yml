@@ -1,7 +1,4 @@
 telegram_token: ""
-openai_login: ""
-openai_password: ""
-openai_access_token: ""
 openai_api_key: ""
 openai_api_base: null  # leave null to use default api base, or you can put your own base url here
 allowed_telegram_usernames: []  # usernames without @, if empty, the bot is available to anyone
