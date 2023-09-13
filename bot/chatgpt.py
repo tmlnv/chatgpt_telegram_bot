@@ -25,15 +25,6 @@ with open('bot/chat_modes.json', 'r') as file:
 
 class ChatGPT:
     def __init__(self, model="pai-001-light-beta"):
-        # self.chatbot = Chatbot(
-        #     config={
-        #         "email": config.openai_login,
-        #         "password": config.openai_password
-        #     } if config.openai_login and config.openai_password else
-        #     {
-        #         "access_token": config.openai_access_token
-        #     }
-        # )
         assert model in ("pai-001-light-beta", "pai-001-beta"), \
             f"Unknown model: {model}. Valid models at: https://discord.pawan.krd"
         self.model = model
@@ -141,10 +132,6 @@ class ChatGPT:
         messages.append({"role": "user", "content": message})
 
         return messages
-
-    def _postprocess_answer(self, answer):
-        answer = answer.strip()
-        return answer
 
     @staticmethod
     def _postprocess_answer(answer):
