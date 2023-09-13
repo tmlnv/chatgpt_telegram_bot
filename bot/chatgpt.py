@@ -1,25 +1,42 @@
 import json
 
+import openai
 from loguru import logger
-from revChatGPT.V1 import Chatbot
 
 import config
+
+# setup openai
+openai.api_key = config.openai_api_key
+if config.openai_api_base is not None:
+    openai.api_base = config.openai_api_base
+
+OPENAI_COMPLETION_OPTIONS = {
+    "temperature": 0.7,
+    "max_tokens": 1000,
+    "top_p": 1,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+    "request_timeout": 60.0,
+}
 
 with open('bot/chat_modes.json', 'r') as file:
     CHAT_MODES = json.load(file)
 
 
 class ChatGPT:
-    def __init__(self):
-        self.chatbot = Chatbot(
-            config={
-                "email": config.openai_login,
-                "password": config.openai_password
-            } if config.openai_login and config.openai_password else
-            {
-                "access_token": config.openai_access_token
-            }
-        )
+    def __init__(self, model="pai-001-light-beta"):
+        # self.chatbot = Chatbot(
+        #     config={
+        #         "email": config.openai_login,
+        #         "password": config.openai_password
+        #     } if config.openai_login and config.openai_password else
+        #     {
+        #         "access_token": config.openai_access_token
+        #     }
+        # )
+        assert model in ("pai-001-light-beta", "pai-001-beta"), \
+            f"Unknown model: {model}. Valid models at: https://discord.pawan.krd"
+        self.model = model
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in CHAT_MODES.keys():
@@ -28,51 +45,75 @@ class ChatGPT:
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
-            prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-            logger.info(f'Prompt:\n{prompt}')
-            log_msg = ""
-            prev_text = ""
-            for data in self.chatbot.ask(prompt):
-                answer = data["message"][len(prev_text):]
-                n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
-                log_msg += answer
-                yield "not_finished", answer, prompt, n_first_dialog_messages_removed
-                prev_text = data["message"]
+            try:
+                messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                logger.info(f'Prompt:\n{messages}')
+
+                r_gen = await openai.ChatCompletion.acreate(
+                    model=self.model,
+                    messages=messages,
+                    stream=True,
+                    **OPENAI_COMPLETION_OPTIONS
+                )
+
+                answer = ""
+                async for r_item in r_gen:
+                    delta = r_item.choices[0].delta
+                    if "content" in delta:
+                        answer += delta.content
+                        n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
+                        yield "not_finished", answer, messages, n_first_dialog_messages_removed
+
+                answer = self._postprocess_answer(answer)
+
+            except openai.error.InvalidRequestError as e:  # too many tokens
+                if len(dialog_messages) == 0:
+                    raise e
 
             # forget first message in dialog_messages
             dialog_messages = dialog_messages[1:]
 
-        logger.info(log_msg)
+        logger.info(answer)
 
         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
-        yield 'finished', answer, prompt, n_first_dialog_messages_removed
+        yield 'finished', answer, messages, n_first_dialog_messages_removed
 
-    def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
         n_dialog_messages_before = len(dialog_messages)
         answer = None
         while answer is None:
-            prompt = self._generate_prompt(message, dialog_messages, chat_mode)
-            logger.info(f'Prompt:\n{prompt}')
-            cntr = 0
-            for data in self.chatbot.ask(prompt):
-                answer = data["message"]
-                cntr += 1
-                if cntr % 25 == 0:
-                    logger.info('ChatGPT is writing answer...')
-            logger.info(f'ChatGPT answer:\n{answer}')
+            try:
+                messages = self._generate_prompt_messages(message, dialog_messages, chat_mode)
+                logger.info(f'Prompt:\n{messages}')
+                r = await openai.ChatCompletion.acreate(
+                    model=self.model,
+                    messages=messages,
+                    **OPENAI_COMPLETION_OPTIONS
+                )
+                answer = r.choices[0].message["content"]
+                logger.info(f'ChatGPT answer:\n{answer}')
+
+                answer = self._postprocess_answer(answer)
+
+            except openai.error.InvalidRequestError as e:  # too many tokens
+                if len(dialog_messages) == 0:
+                    raise ValueError(
+                        "Dialog messages is reduced to zero, but still has too many tokens to make completion"
+                    ) from e
 
             # forget first message in dialog_messages
             dialog_messages = dialog_messages[1:]
 
         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
-        return answer, prompt, n_first_dialog_messages_removed
+        return answer, messages, n_first_dialog_messages_removed
 
-    def _generate_prompt(self, message, dialog_messages, chat_mode):
+    @staticmethod
+    def _generate_prompt(message, dialog_messages, chat_mode):
         prompt = CHAT_MODES[chat_mode]["prompt_start"]
         prompt += "\n\n"
 
@@ -88,3 +129,24 @@ class ChatGPT:
         prompt += "ChatGPT: "
 
         return prompt
+
+    @staticmethod
+    def _generate_prompt_messages(message, dialog_messages, chat_mode):
+        prompt = CHAT_MODES[chat_mode]["prompt_start"]
+
+        messages = [{"role": "system", "content": prompt}]
+        for dialog_message in dialog_messages:
+            messages.append({"role": "user", "content": dialog_message["user"]})
+            messages.append({"role": "assistant", "content": dialog_message["bot"]})
+        messages.append({"role": "user", "content": message})
+
+        return messages
+
+    def _postprocess_answer(self, answer):
+        answer = answer.strip()
+        return answer
+
+    @staticmethod
+    def _postprocess_answer(answer):
+        answer = answer.strip()
+        return answer

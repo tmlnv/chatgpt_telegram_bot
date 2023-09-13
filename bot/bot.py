@@ -181,8 +181,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
             prev_answer = ""
             answer = ""
             async for gen_item in gen:
-                status, _, prompt, n_first_dialog_messages_removed = gen_item
-                answer += gen_item[1]
+                status, answer, prompt, n_first_dialog_messages_removed = gen_item
 
                 answer = answer[:4096]  # telegram message limit
 
