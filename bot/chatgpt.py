@@ -24,9 +24,7 @@ with open('bot/chat_modes.json', 'r') as file:
 
 
 class ChatGPT:
-    def __init__(self, model="pai-001-light-beta"):
-        assert model in ("pai-001-light-beta", "pai-001-beta"), \
-            f"Unknown model: {model}. Valid models at: https://discord.pawan.krd"
+    def __init__(self, model="gpt-3.5-turbo"):
         self.model = model
 
     async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
