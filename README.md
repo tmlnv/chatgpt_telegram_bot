@@ -44,3 +44,4 @@ Or, using the sqlite, run:
 3. [*OpenAI Davinci API Telegram Bot*](https://github.com/karfly/chatgpt_telegram_bot)
 4. [*Kandinsky 2.2*](https://huggingface.co/kandinsky-community/kandinsky-2-2-decoder)
 5. [*OpenAI API Free Reverse Proxy*](https://github.com/PawanOsman/ChatGPT)
+6. [*GPT4FREE*](https://github.com/xtekky/gpt4free)

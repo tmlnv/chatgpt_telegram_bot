@@ -10,6 +10,8 @@ services:
       dockerfile: Dockerfile
     volumes:
       - sqlite-volume:/code/db
+    depends_on:
+      - flask_app
 
   sqlite_web:
     container_name: sqlite_web
@@ -23,6 +25,15 @@ services:
       - sqlite-volume:/data
     env_file:
       - config/config.env
+
+  flask_app:
+    container_name: flask_app
+    restart: always
+    build:
+      context: "."
+      dockerfile: DockerfileFlask
+    ports:
+      - "1337:1337"
 
 volumes:
   sqlite-volume:
