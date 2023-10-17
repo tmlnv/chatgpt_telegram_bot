@@ -3,7 +3,6 @@ import asyncio
 import base64
 import html
 import json
-import logging
 import traceback
 from datetime import datetime
 
@@ -26,6 +25,7 @@ from telegram.ext import (
     AIORateLimiter,
     filters
 )
+from loguru import logger
 
 import chatgpt
 import config
@@ -35,7 +35,6 @@ import kandinsky_fusion_brain
 
 # setup
 db = None
-logger = logging.getLogger(__name__)
 user_semaphores = {}
 
 HELP_MESSAGE = """Commands:

@@ -7,10 +7,13 @@ from io import BytesIO
 from PIL import Image
 from loguru import logger
 
+import config
+
 
 class FusionBrainAPI:
     def __init__(self, base_url='https://api.fusionbrain.ai/web/api/v1/text2image'):
         self.base_url = base_url
+        self.headers = {"Authorization": f"Bearer {config.fusion_brain_auth_token}"}
 
     async def generate_image(self, query: str) -> str | None:
         run_url = f'{self.base_url}/run?model_id=1'
@@ -24,7 +27,7 @@ class FusionBrainAPI:
         data = aiohttp.FormData()
         data.add_field('params', json.dumps(payload), filename='blob', content_type='application/json')
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.headers) as session:
             async with session.post(run_url, data=data) as response:
                 if response.status == 201:
                     resp = await response.json()
@@ -38,7 +41,7 @@ class FusionBrainAPI:
 
     async def get_image(self, uuid: str) -> str | None:
         status_url = f'{self.base_url}/status/{uuid}'
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.headers) as session:
             while True:
                 async with session.get(status_url) as response:
                     if response.status == 200:
