@@ -22,3 +22,5 @@ new_dialog_timeout = config_yaml["new_dialog_timeout"]
 enable_message_streaming = config_yaml.get("enable_message_streaming", True)
 mongodb_uri = f"mongodb://mongo:{config_env['MONGODB_PORT']}"
 sqlite_database_uri = config_env['SQLITE_DATABASE_PATH']
+
+fusion_brain_auth_token = config_yaml["fusion_brain_auth_token"]

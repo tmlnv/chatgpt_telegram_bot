@@ -3,3 +3,5 @@ openai_api_key: ""
 openai_api_base: "http://flask_app:1337" # uses flask proxy server via docker-compose network
 allowed_telegram_usernames: []  # usernames without @, if empty, the bot is available to anyone
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)
+enable_message_streaming: true # if set, messages will be shown to user word-by-word
+fusion_brain_auth_token: ""

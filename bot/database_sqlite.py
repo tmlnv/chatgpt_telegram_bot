@@ -126,8 +126,8 @@ class SqliteDataBase:
         dialog_id = dialog_id or self.get_user_attribute(user_id, "current_dialog_id")
         with closing(self.db_conn.cursor()) as cursor:
             res = cursor.execute(f"SELECT user,bot,_date FROM messages "
-                                 f"WHERE dialog_id=? AND user_id=? "
-                                 f"ORDER BY _date", (dialog_id, user_id))
+                                 f"WHERE dialog_id='{dialog_id}' AND user_id={user_id} "
+                                 f"ORDER BY _date")
             return list(map(
                 lambda item: {"user": item[0], "bot": item[1], "date": datetime.fromtimestamp(item[2])},
                 res
