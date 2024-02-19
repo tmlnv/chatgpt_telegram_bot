@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import base64
 import html
@@ -27,14 +26,13 @@ from telegram.ext import (
 )
 from loguru import logger
 
-import chatgpt
-import config
-import database_mongo
-import database_sqlite
-import kandinsky_fusion_brain
+import bot.chatgpt as chatgpt
+import bot.config as config
+import bot.database_sqlite as database_sqlite
+import bot.kandinsky_fusion_brain as kandinsky_fusion_brain
 
 # setup
-db = None
+db = database_sqlite.SqliteDataBase(config.sqlite_database_uri)
 user_semaphores = {}
 
 HELP_MESSAGE = """Commands:
@@ -377,15 +375,6 @@ async def post_init(application: Application):
 
 
 def run_bot() -> None:
-    global db
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--database", type=str)
-    curr_args = parser.parse_args()
-    if curr_args.database == "sqlite":
-     db = database_sqlite.SqliteDataBase(config.sqlite_database_uri)
-    else:
-     db = database_mongo.MongoDatabase(config.mongodb_uri)
-
     application = (
         ApplicationBuilder()
         .token(config.telegram_token)
