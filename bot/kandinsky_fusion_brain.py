@@ -7,7 +7,7 @@ from io import BytesIO
 from PIL import Image
 from loguru import logger
 
-import config
+import conf as config
 
 
 class FusionBrainAPI:

@@ -3,7 +3,7 @@ import json
 import openai
 from loguru import logger
 
-import config
+import conf as config
 
 # setup openai
 openai.api_key = config.openai_api_key

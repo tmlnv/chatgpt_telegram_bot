@@ -26,10 +26,10 @@ from telegram.ext import (
 )
 from loguru import logger
 
-import bot.chatgpt as chatgpt
-import bot.config as config
-import bot.database_sqlite as database_sqlite
-import bot.kandinsky_fusion_brain as kandinsky_fusion_brain
+import chatgpt
+import conf as config
+import database_sqlite
+import kandinsky_fusion_brain
 
 # setup
 db = database_sqlite.SqliteDataBase(config.sqlite_database_uri)
@@ -106,9 +106,6 @@ async def retry_handle(update: Update, context: CallbackContext):
     if last_dialog_message is None:
         await update.message.reply_text("🤷‍♂️ No message to retry")
         return
-
-    last_dialog_message = dialog_messages.pop()
-    db.set_dialog_messages(user_id, dialog_messages, dialog_id=None)  # last message was removed from the context
 
     await message_handle(update, context, message=last_dialog_message["user"], use_new_dialog_timeout=False)
 
