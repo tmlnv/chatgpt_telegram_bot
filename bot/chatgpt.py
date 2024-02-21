@@ -27,7 +27,15 @@ class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo-16k"):
         self.model = model
 
-    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message_stream(
+            self,
+            message: str,
+            dialog_messages: list[dict[str, str]] | None = None,
+            chat_mode: str = "assistant"
+    ):
+        if dialog_messages is None:
+            dialog_messages: list[str] = []
+
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -68,7 +76,15 @@ class ChatGPT:
 
         yield 'finished', answer, messages, n_first_dialog_messages_removed
 
-    async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message(
+            self,
+            message: str,
+            dialog_messages: list[dict[str, str]] | None = None,
+            chat_mode: str = "assistant"
+    ):
+        if dialog_messages is None:
+            dialog_messages = []
+
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
