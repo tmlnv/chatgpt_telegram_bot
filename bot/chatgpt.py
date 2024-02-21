@@ -6,7 +6,7 @@ from loguru import logger
 import conf as config
 
 # setup openai
-openai.api_key = config.openai_api_key
+openai.api_key = config.hugging_face_as_openai_api_key
 if config.openai_api_base is not None:
     openai.api_base = config.openai_api_base
 
