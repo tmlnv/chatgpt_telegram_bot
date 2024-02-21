@@ -1,5 +1,4 @@
 import asyncio
-import base64
 import html
 import json
 import traceback
@@ -29,7 +28,6 @@ from loguru import logger
 import chatgpt
 import conf as config
 import database_sqlite
-import kandinsky_fusion_brain
 
 # setup
 db = database_sqlite.SqliteDataBase(config.sqlite_database_uri)
@@ -67,9 +65,6 @@ async def register_user_if_not_exists(update: Update, context: CallbackContext, 
 
     if db.get_user_attribute(user.id, "current_chat_mode") is None:
         db.set_user_attribute(user_id=user.id, key="current_chat_mode", value="assistant")
-
-    if db.get_user_attribute(user.id, "n_generated_images") is None:
-        db.set_user_attribute(user_id=user.id, key="n_generated_images", value=0)
 
 
 async def start_handle(update: Update, context: CallbackContext):
@@ -122,10 +117,6 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
-
-    if chat_mode == "image":
-        await generate_image_handle(update, context, message=message)
-        return
 
     async with user_semaphores[user_id]:
         # new dialog timeout
@@ -267,53 +258,6 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
-
-
-async def generate_image_handle(update: Update, context: CallbackContext, message=None):
-    await register_user_if_not_exists(update, context, update.message.from_user)
-    if await is_previous_message_not_answered_yet(update, context):
-        return
-
-    user_id = update.message.from_user.id
-    db.set_user_attribute(user_id, "last_interaction", datetime.now())
-
-    await update.message.chat.send_action(action="upload_photo")
-
-    message = message or update.message.text
-
-    kandinsky_instance = kandinsky_fusion_brain.FusionBrainAPI()
-
-    base64_image = None
-
-    try:
-        uuid = await kandinsky_instance.generate_image(query=message)
-        if uuid:
-            image_data = None
-            while image_data is None:
-                await asyncio.sleep(10)
-                image_data = await kandinsky_instance.get_image(uuid)
-            if image_data:
-                image_bytes = await kandinsky_instance.get_image_bytes(image_data)
-                if image_bytes is None:
-                    raise Exception("No image data received from the server.")
-                base64_image = base64.b64encode(image_bytes.getvalue()).decode('utf-8')
-            else:
-                raise Exception("Failed to get image data.")
-    except Exception as e:
-        text = f"Something went wrong while generating image via <b>Kandinsky</b> for you. Reason:\n{e}"
-        await update.message.reply_text(text, parse_mode=ParseMode.HTML)
-        return
-
-    # image usage
-    # update user data
-    new_dialog_message = {"user": message, "bot": base64_image, "date": datetime.now()}
-    db.append_dialog_message(user_id, new_dialog_message, dialog_id=None)
-    db.set_user_attribute(
-        user_id=user_id, key="n_generated_images", value=1 + db.get_user_attribute(user_id, "n_generated_images")
-    )
-
-    await update.message.chat.send_action(action="upload_photo")
-    await update.message.reply_photo(image_bytes, parse_mode=ParseMode.HTML)
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):

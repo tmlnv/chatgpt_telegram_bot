@@ -20,8 +20,7 @@ _USER_TABLE_FIELD_TYPES = {
     "last_interaction": datetime,
     "first_seen": datetime,
     "current_dialog_id": str,
-    "current_chat_mode": str,
-    "n_generated_images": int,
+    "current_chat_mode": str
 }
 
 
@@ -39,8 +38,7 @@ class SqliteDataBase:
                            "last_interaction INT NOT NULL, "
                            "first_seen INT NOT NULL, "
                            "current_dialog_id TEXT, "
-                           "current_chat_mode TEXT NOT NULL, "
-                           "n_generated_images INT NOT NULL)")
+                           "current_chat_mode TEXT NOT NULL)")
             cursor.execute("CREATE TABLE IF NOT EXISTS dialogs("
                            "_id TEXT PRIMARY KEY NOT NULL, "
                            "user_id INT NOT NULL, "
@@ -85,8 +83,7 @@ class SqliteDataBase:
                 time_now,  # last_interaction
                 time_now,  # first_seen
                 None,  # current_dialog_id
-                "assistant",  # current_chat_mode
-                0  # n_generated_images
+                "assistant"  # current_chat_mode
             ])
 
     def start_new_dialog(self, user_id: int):
