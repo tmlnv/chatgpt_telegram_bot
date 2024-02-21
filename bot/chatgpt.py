@@ -3,10 +3,10 @@ import json
 import openai
 from loguru import logger
 
-import config
+import conf as config
 
 # setup openai
-openai.api_key = config.openai_api_key
+openai.api_key = config.hugging_face_as_openai_api_key
 if config.openai_api_base is not None:
     openai.api_base = config.openai_api_base
 
@@ -27,7 +27,15 @@ class ChatGPT:
     def __init__(self, model="gpt-3.5-turbo-16k"):
         self.model = model
 
-    async def send_message_stream(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message_stream(
+            self,
+            message: str,
+            dialog_messages: list[dict[str, str]] | None = None,
+            chat_mode: str = "assistant"
+    ):
+        if dialog_messages is None:
+            dialog_messages: list[str] = []
+
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -59,8 +67,8 @@ class ChatGPT:
                 if len(dialog_messages) == 0:
                     raise e
 
-            # forget first message in dialog_messages
-            dialog_messages = dialog_messages[1:]
+                # forget first message in dialog_messages
+                dialog_messages = dialog_messages[1:]
 
         logger.info(answer)
 
@@ -68,7 +76,15 @@ class ChatGPT:
 
         yield 'finished', answer, messages, n_first_dialog_messages_removed
 
-    async def send_message(self, message, dialog_messages=[], chat_mode="assistant"):
+    async def send_message(
+            self,
+            message: str,
+            dialog_messages: list[dict[str, str]] | None = None,
+            chat_mode: str = "assistant"
+    ):
+        if dialog_messages is None:
+            dialog_messages = []
+
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
 
@@ -94,8 +110,8 @@ class ChatGPT:
                         "Dialog messages is reduced to zero, but still has too many tokens to make completion"
                     ) from e
 
-            # forget first message in dialog_messages
-            dialog_messages = dialog_messages[1:]
+                # forget first message in dialog_messages
+                dialog_messages = dialog_messages[1:]
 
         n_first_dialog_messages_removed = n_dialog_messages_before - len(dialog_messages)
 
@@ -120,7 +136,11 @@ class ChatGPT:
         return prompt
 
     @staticmethod
-    def _generate_prompt_messages(message, dialog_messages, chat_mode):
+    def _generate_prompt_messages(
+            message: str,
+            dialog_messages: list[dict[str, str]],
+            chat_mode: str
+    ) -> list[dict[str, str]]:
         prompt = CHAT_MODES[chat_mode]["prompt_start"]
 
         messages = [{"role": "system", "content": prompt}]
@@ -132,6 +152,6 @@ class ChatGPT:
         return messages
 
     @staticmethod
-    def _postprocess_answer(answer):
+    def _postprocess_answer(answer: str) -> str:
         answer = answer.strip()
         return answer

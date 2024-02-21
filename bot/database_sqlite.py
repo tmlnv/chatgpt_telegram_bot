@@ -20,8 +20,7 @@ _USER_TABLE_FIELD_TYPES = {
     "last_interaction": datetime,
     "first_seen": datetime,
     "current_dialog_id": str,
-    "current_chat_mode": str,
-    "n_generated_images": int,
+    "current_chat_mode": str
 }
 
 
@@ -39,8 +38,7 @@ class SqliteDataBase:
                            "last_interaction INT NOT NULL, "
                            "first_seen INT NOT NULL, "
                            "current_dialog_id TEXT, "
-                           "current_chat_mode TEXT NOT NULL, "
-                           "n_generated_images INT NOT NULL)")
+                           "current_chat_mode TEXT NOT NULL)")
             cursor.execute("CREATE TABLE IF NOT EXISTS dialogs("
                            "_id TEXT PRIMARY KEY NOT NULL, "
                            "user_id INT NOT NULL, "
@@ -85,8 +83,7 @@ class SqliteDataBase:
                 time_now,  # last_interaction
                 time_now,  # first_seen
                 None,  # current_dialog_id
-                "assistant",  # current_chat_mode
-                0  # n_generated_images
+                "assistant"  # current_chat_mode
             ])
 
     def start_new_dialog(self, user_id: int):
@@ -146,11 +143,22 @@ class SqliteDataBase:
 
     def remove_dialog_last_message(self, user_id: int, dialog_id: Optional[str] = None):
         dialog_id = dialog_id or self.get_user_attribute(user_id, "current_dialog_id")
+        last_message = None
         with closing(self.db_conn.cursor()) as cursor:
-            cursor.execute(f"DELETE FROM messages "
-                           f"WHERE _date=(SELECT MAX(_date) FROM messages WHERE dialog_id=? LIMIT 1) "
-                           f"AND dialog_id=?", (dialog_id, dialog_id))
-            self.db_conn.commit()
+            # First, fetch the last message
+            cursor.execute("SELECT user, bot, _date FROM messages WHERE dialog_id=? ORDER BY _date DESC LIMIT 1",
+                           (dialog_id,))
+            last_row = cursor.fetchone()
+            if last_row:
+                last_message = {
+                    "user": last_row[0],
+                    "bot": last_row[1],
+                    "date": datetime.fromtimestamp(last_row[2]),
+                }
+                # Then, delete the last message
+                cursor.execute("DELETE FROM messages WHERE _date=? AND dialog_id=?", (last_row[2], dialog_id))
+                self.db_conn.commit()
+        return last_message
 
     def __insert_table_row(self, table_name: str, datas: list):
         sql_str = f"INSERT INTO {table_name} VALUES("

@@ -1,5 +1,5 @@
 telegram_token: ""
-openai_api_key: "" # Hugging Face API token will suite here for the g4f usage
+hugging_face_as_openai_api_key: "" # Hugging Face API token will suite here for the g4f usage, get it here with the write permissions https://huggingface.co/settings/tokens
 openai_api_base: "http://g4f:1337/v1" # uses g4f api server via docker-compose network
 allowed_telegram_usernames: []  # usernames without @, if empty, the bot is available to anyone
 new_dialog_timeout: 600  # new dialog starts after timeout (in seconds)

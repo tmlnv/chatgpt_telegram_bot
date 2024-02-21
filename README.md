@@ -3,10 +3,9 @@ This is a Telegram bot that allows you to interact with ChatGPT, an advanced cha
 
 ## Features
 - Code highlighting
-- Chat modes: 🛎 Assistant, 💻 Code Assistant, 📝 Text Improver , ⚫ Blank, 🖼️ Image
+- Chat modes: 🛎 Assistant, 💻 Code Assistant, 📝 Text Improver , ⚫ Blank
 - List of allowed Telegram users
 - Message streaming
-- Image generation via Kandinsky 2.2
 
 ## Bot commands
 - `/new` – Start new conversation
@@ -15,11 +14,9 @@ This is a Telegram bot that allows you to interact with ChatGPT, an advanced cha
 - `/help` – Show help
 
 ## Setup
-1. Create your [OpenAI](https://chat.openai.com/auth/login) account
+1. Get your Telegram bot token from [@BotFather](https://t.me/BotFather)
 
-2. Get your Telegram bot token from [@BotFather](https://t.me/BotFather)
-
-3. Edit `config/config.example.yml` to set your telegram token and OpenAI credentials (email and password or [OpenAI access_token](https://chat.openai.com/api/auth/session)) and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
+2. Edit `config/config.example.yml` to set your telegram token and [Hugging Face api key](https://huggingface.co/settings/tokens) (write permissions necessary) and run 2 commands below (*if you're advanced user, you can also edit* `config/config.example.env`):
 ```bash
 mv config/config.example.yml config/config.yml
 mv config/config.example.env config/config.env
@@ -27,15 +24,9 @@ mv config/config.example.env config/config.env
 
 And now **run**:
 
-```bash
-docker-compose --env-file config/config.env up --build
-```
-
-Or, using the sqlite, run:
  ```bash
- docker-compose -f docker-compose-sqlite.yml --env-file config/config.env up --build
+ docker-compose -f docker-compose.yml --env-file config/config.env up --build
  ```
-
 
 
 ## References

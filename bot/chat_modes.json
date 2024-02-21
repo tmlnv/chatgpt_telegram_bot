@@ -22,11 +22,5 @@
     "welcome_message": "⚫ A regular <b>ChatGPT</b> without a prompt.",
     "prompt_start": "",
     "parse_mode": "html"
-  },
-    "image": {
-    "name": "\uD83D\uDDBC️ Image",
-    "welcome_message": "\uD83D\uDDBC️ <b>Kandinsky 2.2</b>. It will generate a 1024x1024 image based on a prompt.",
-    "prompt_start": "",
-    "parse_mode": "html"
   }
 }
