@@ -1,5 +1,4 @@
 loguru==0.6.0
-pymongo==4.3.3
 python-dotenv==0.21.0
 python-telegram-bot[rate-limiter]==20.1
 PyYAML==6.0
