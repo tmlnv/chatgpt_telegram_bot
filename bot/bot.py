@@ -40,6 +40,9 @@ HELP_MESSAGE = """Commands:
 /help – ℹ️ Show help
 """
 
+# Dictionary to track if we're expecting a chat mode selection from a user
+expecting_mode_selection = {}
+
 
 def split_text_into_chunks(text, chunk_size):
     for i in range(0, len(text), chunk_size):
@@ -117,6 +120,10 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
 
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
+
+    # New check for chat mode selection
+    if await chat_mode_selection_handle(update, context):
+        return  # If the message was handled as a chat mode selection, exit early
 
     async with user_semaphores[user_id]:
         # new dialog timeout
@@ -250,14 +257,44 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
         return
 
     user_id = update.message.from_user.id
+    expecting_mode_selection[user_id] = True  # Indicate expecting mode selection into in-memory state
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     keyboard = []
-    for chat_mode, chat_mode_dict in chatgpt.CHAT_MODES.items():
-        keyboard.append([InlineKeyboardButton(chat_mode_dict["name"], callback_data=f"set_chat_mode|{chat_mode}")])
+    for i, (chat_mode, chat_mode_dict) in enumerate(chatgpt.CHAT_MODES.items(), start=1):
+        keyboard.append([InlineKeyboardButton(
+            text=f'{i}. {chat_mode_dict["name"]}',
+            callback_data=f"set_chat_mode|{chat_mode}")]
+        )
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+
+
+async def chat_mode_selection_handle(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    if expecting_mode_selection.get(user_id):
+        text = update.message.text.strip()
+        if text.isdigit():
+            option_number = int(text)
+            chat_modes = list(chatgpt.CHAT_MODES.keys())
+
+            if 1 <= option_number <= len(chat_modes):
+                chat_mode = chat_modes[option_number - 1]
+
+                # Update the user's chat mode here as before
+
+                del expecting_mode_selection[user_id]  # Clear the state after selection
+
+                db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
+                db.start_new_dialog(user_id)
+
+                await update.message.reply_text(
+                    text=f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}",
+                    parse_mode=ParseMode.HTML
+                )
+                return True
+    return False
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):
