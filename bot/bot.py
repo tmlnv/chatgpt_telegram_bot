@@ -41,7 +41,7 @@ HELP_MESSAGE = """Commands:
 """
 
 # Dictionary to track if we're expecting a chat mode selection from a user
-expecting_mode_selection = {}
+expecting_mode_selection: dict[int, dict[str, bool | int]] = {}
 
 
 def split_text_into_chunks(text, chunk_size):
@@ -122,7 +122,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
     # New check for chat mode selection
-    if await chat_mode_selection_handle(update, context):
+    if await is_chat_mode_selection_handle(update, context):
         return  # If the message was handled as a chat mode selection, exit early
 
     async with user_semaphores[user_id]:
@@ -257,7 +257,11 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
         return
 
     user_id = update.message.from_user.id
-    expecting_mode_selection[user_id] = True  # Indicate expecting mode selection into in-memory state
+    expecting_mode_selection[user_id] = {
+        "expecting": True,
+        "message_id": update.message.message_id,
+        "chat_id": update.message.chat_id
+    }  # Indicate expecting mode selection into in-memory state
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     keyboard = []
@@ -271,9 +275,9 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
     await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
 
 
-async def chat_mode_selection_handle(update: Update, context: CallbackContext):
+async def is_chat_mode_selection_handle(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
-    if expecting_mode_selection.get(user_id):
+    if user_id in expecting_mode_selection and expecting_mode_selection[user_id]["expecting"]:
         text = update.message.text.strip()
         if text.isdigit():
             option_number = int(text)
@@ -282,17 +286,15 @@ async def chat_mode_selection_handle(update: Update, context: CallbackContext):
             if 1 <= option_number <= len(chat_modes):
                 chat_mode = chat_modes[option_number - 1]
 
-                # Update the user's chat mode here as before
+                await context.bot.edit_message_text(
+                    text=f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}",
+                    parse_mode=ParseMode.HTML,
+                    chat_id=expecting_mode_selection[user_id]["chat_id"],
+                    message_id=expecting_mode_selection[user_id]["message_id"]
+                )
 
                 del expecting_mode_selection[user_id]  # Clear the state after selection
 
-                db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
-                db.start_new_dialog(user_id)
-
-                await update.message.reply_text(
-                    text=f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}",
-                    parse_mode=ParseMode.HTML
-                )
                 return True
     return False
 
@@ -318,7 +320,7 @@ async def edited_message_handle(update: Update, context: CallbackContext):
 
 
 async def error_handle(update: Update, context: CallbackContext) -> None:
-    logger.error("Exception while handling an update:", context.error)
+    logger.error(f"Exception while handling an update: {context.error}")
 
     try:
         # collect error message
