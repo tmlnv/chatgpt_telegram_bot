@@ -1,6 +1,11 @@
 # chatgpt_telegram_bot
 This is a Telegram bot that allows you to interact with ChatGPT, an advanced chatbot powered by OpenAI. The bot is designed to run via Docker Compose, making it easy to deploy and manage in any environment.
 
+<p align="center">
+    <img src="https://drive.google.com/uc?export=view&id=1vC_QwIKtIT96-tes8Z6IoS8HJDWApZIQ" width="230"/>
+</p>
+
+
 ## Features
 - Code highlighting
 - Chat modes: 🛎 Assistant, 💻 Code Assistant, 📝 Text Improver , ⚫ Blank
