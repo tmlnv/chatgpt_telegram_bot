@@ -257,11 +257,6 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
         return
 
     user_id = update.message.from_user.id
-    expecting_mode_selection[user_id] = {
-        "expecting": True,
-        "message_id": update.message.message_id,
-        "chat_id": update.message.chat_id
-    }  # Indicate expecting mode selection into in-memory state
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     keyboard = []
@@ -272,10 +267,18 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
         )
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+    # Send the reply and capture the result
+    sent_message = await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+
+    # Store the message ID of the bot's reply
+    expecting_mode_selection[user_id] = {
+        "expecting": True,
+        "message_id": sent_message.message_id,  # This is the bot's message ID
+        "chat_id": sent_message.chat_id
+    }
 
 
-async def is_chat_mode_selection_handle(update: Update, context: CallbackContext):
+async def is_chat_mode_selection_handle(update: Update, context: CallbackContext) -> bool:
     user_id = update.message.from_user.id
     if user_id in expecting_mode_selection and expecting_mode_selection[user_id]["expecting"]:
         text = update.message.text.strip()
@@ -294,6 +297,9 @@ async def is_chat_mode_selection_handle(update: Update, context: CallbackContext
                 )
 
                 del expecting_mode_selection[user_id]  # Clear the state after selection
+
+                db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
+                db.start_new_dialog(user_id)
 
                 return True
     return False
