@@ -4,26 +4,20 @@ import json
 import traceback
 from datetime import datetime
 
-import telegram
-from telegram import (
-    Update,
-    User,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    BotCommand
-)
+from loguru import logger
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update, User
 from telegram.constants import ParseMode
+from telegram.error import BadRequest
 from telegram.ext import (
+    AIORateLimiter,
     Application,
     ApplicationBuilder,
     CallbackContext,
+    CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
-    CallbackQueryHandler,
-    AIORateLimiter,
     filters
 )
-from loguru import logger
 
 import chatgpt
 import conf as config
@@ -39,6 +33,9 @@ HELP_MESSAGE = """Commands:
 /retry – 🔁 Regenerate last bot answer
 /help – ℹ️ Show help
 """
+
+# Dictionary to track if we're expecting a chat mode selection from a user
+expecting_mode_selection: dict[int, dict[str, bool | int]] = {}
 
 
 def split_text_into_chunks(text, chunk_size):
@@ -118,6 +115,10 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     user_id = update.message.from_user.id
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
 
+    # New check for chat mode selection
+    if await is_chat_mode_selection_handle(update, context):
+        return  # If the message was handled as a chat mode selection, exit early
+
     async with user_semaphores[user_id]:
         # new dialog timeout
         if use_new_dialog_timeout:
@@ -181,15 +182,15 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                         message_id=placeholder_message.message_id,
                         parse_mode=parse_mode
                     )
-                except telegram.error.BadRequest as e:
+                except BadRequest as e:
                     if str(e).startswith("Message is not modified"):
                         continue
-                    else:
-                        await context.bot.edit_message_text(
-                            text=answer,
-                            chat_id=placeholder_message.chat_id,
-                            message_id=placeholder_message.message_id
-                        )
+
+                    await context.bot.edit_message_text(
+                        text=answer,
+                        chat_id=placeholder_message.chat_id,
+                        message_id=placeholder_message.message_id
+                    )
 
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
@@ -251,13 +252,57 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+    logger.info("User {} is setting chat mode", user_id)
 
     keyboard = []
-    for chat_mode, chat_mode_dict in chatgpt.CHAT_MODES.items():
-        keyboard.append([InlineKeyboardButton(chat_mode_dict["name"], callback_data=f"set_chat_mode|{chat_mode}")])
+    for i, (chat_mode, chat_mode_dict) in enumerate(chatgpt.CHAT_MODES.items(), start=1):
+        keyboard.append([InlineKeyboardButton(
+            text=f'{i}. {chat_mode_dict["name"]}',
+            callback_data=f"set_chat_mode|{chat_mode}")]
+        )
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+    # Send the reply and capture the result
+    sent_message = await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+
+    # Store the message ID of the bot's reply
+    expecting_mode_selection[user_id] = {
+        "expecting": True,
+        "message_id": sent_message.message_id,  # This is the bot's message ID
+        "chat_id": sent_message.chat_id
+    }
+
+
+async def is_chat_mode_selection_handle(update: Update, context: CallbackContext) -> bool:
+    user_id = update.message.from_user.id
+    if user_id in expecting_mode_selection and expecting_mode_selection[user_id]["expecting"]:
+        text = update.message.text.strip()
+        if text.isdigit():
+            option_number = int(text)
+            chat_modes = list(chatgpt.CHAT_MODES.keys())
+
+            if 1 <= option_number <= len(chat_modes):
+                chat_mode = chat_modes[option_number - 1]
+
+                await context.bot.edit_message_text(
+                    text=f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}",
+                    parse_mode=ParseMode.HTML,
+                    chat_id=expecting_mode_selection[user_id]["chat_id"],
+                    message_id=expecting_mode_selection[user_id]["message_id"]
+                )
+
+                del expecting_mode_selection[user_id]  # Clear the state after selection
+
+                db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
+                db.start_new_dialog(user_id)
+                logger.info(
+                    "User {} set chat mode to {} via number sending",
+                    user_id,
+                    chat_mode
+                )
+
+                return True
+    return False
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):
@@ -271,6 +316,9 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
 
     db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
     db.start_new_dialog(user_id)
+    logger.info("User {} set chat mode to {} via message selection options (tg keyboard)", user_id, chat_mode)
+
+    del expecting_mode_selection[user_id]  # Clear the state after selection
 
     await query.edit_message_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
@@ -281,7 +329,7 @@ async def edited_message_handle(update: Update, context: CallbackContext):
 
 
 async def error_handle(update: Update, context: CallbackContext) -> None:
-    logger.error("Exception while handling an update:", context.error)
+    logger.error(f"Exception while handling an update: {context.error}")
 
     try:
         # collect error message
@@ -299,7 +347,7 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
         for message_chunk in split_text_into_chunks(message, 4096):
             try:
                 await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
-            except telegram.error.BadRequest:
+            except BadRequest:
                 # answer has invalid characters, so we send it without parse_mode
                 await context.bot.send_message(update.effective_chat.id, message_chunk)
     except:
