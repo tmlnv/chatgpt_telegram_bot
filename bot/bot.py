@@ -4,26 +4,20 @@ import json
 import traceback
 from datetime import datetime
 
-import telegram
-from telegram import (
-    Update,
-    User,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    BotCommand
-)
+from loguru import logger
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update, User
 from telegram.constants import ParseMode
+from telegram.error import BadRequest
 from telegram.ext import (
+    AIORateLimiter,
     Application,
     ApplicationBuilder,
     CallbackContext,
+    CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
-    CallbackQueryHandler,
-    AIORateLimiter,
     filters
 )
-from loguru import logger
 
 import chatgpt
 import conf as config
@@ -188,15 +182,15 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
                         message_id=placeholder_message.message_id,
                         parse_mode=parse_mode
                     )
-                except telegram.error.BadRequest as e:
+                except BadRequest as e:
                     if str(e).startswith("Message is not modified"):
                         continue
-                    else:
-                        await context.bot.edit_message_text(
-                            text=answer,
-                            chat_id=placeholder_message.chat_id,
-                            message_id=placeholder_message.message_id
-                        )
+
+                    await context.bot.edit_message_text(
+                        text=answer,
+                        chat_id=placeholder_message.chat_id,
+                        message_id=placeholder_message.message_id
+                    )
 
                 await asyncio.sleep(0.01)  # wait a bit to avoid flooding
 
@@ -258,6 +252,7 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
 
     user_id = update.message.from_user.id
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
+    logger.info("User {} is setting chat mode", user_id)
 
     keyboard = []
     for i, (chat_mode, chat_mode_dict) in enumerate(chatgpt.CHAT_MODES.items(), start=1):
@@ -300,6 +295,11 @@ async def is_chat_mode_selection_handle(update: Update, context: CallbackContext
 
                 db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
                 db.start_new_dialog(user_id)
+                logger.info(
+                    "User {} set chat mode to {} via number sending",
+                    user_id,
+                    chat_mode
+                )
 
                 return True
     return False
@@ -316,6 +316,9 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
 
     db.set_user_attribute(user_id, "current_chat_mode", chat_mode)
     db.start_new_dialog(user_id)
+    logger.info("User {} set chat mode to {} via message selection options (tg keyboard)", user_id, chat_mode)
+
+    del expecting_mode_selection[user_id]  # Clear the state after selection
 
     await query.edit_message_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
 
@@ -344,7 +347,7 @@ async def error_handle(update: Update, context: CallbackContext) -> None:
         for message_chunk in split_text_into_chunks(message, 4096):
             try:
                 await context.bot.send_message(update.effective_chat.id, message_chunk, parse_mode=ParseMode.HTML)
-            except telegram.error.BadRequest:
+            except BadRequest:
                 # answer has invalid characters, so we send it without parse_mode
                 await context.bot.send_message(update.effective_chat.id, message_chunk)
     except:
