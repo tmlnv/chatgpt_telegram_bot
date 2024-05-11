@@ -34,7 +34,7 @@ class ChatGPT:
             chat_mode: str = "assistant"
     ):
         if dialog_messages is None:
-            dialog_messages: list[str] = []
+            dialog_messages = []
 
         if chat_mode not in CHAT_MODES.keys():
             raise ValueError(f"Chat mode {chat_mode} is not supported")
