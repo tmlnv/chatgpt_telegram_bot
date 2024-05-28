@@ -23,6 +23,7 @@ openai = ">=0.27.2,<0.28.0"
 mypy = "^1.9.0"
 pylint = "^3.1.0"
 isort = "^5.13.2"
+neovim = "^0.3.1"
 
 
 [tool.isort]
