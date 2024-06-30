@@ -129,10 +129,12 @@ dmypy.json
 .pyre/
 
 # Custom
-config/config.yml
-config/config.env
+src/config/config.yml
+src/config/config.env
 .DS_Store
 .idea/
 mongodb/
 *.db
 tmp/
+db_backups/
+
