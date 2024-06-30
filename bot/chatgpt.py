@@ -24,7 +24,7 @@ with open('bot/chat_modes.json', 'r') as file:
 
 
 class ChatGPT:
-    def __init__(self, model="gpt-4-turbo"):
+    def __init__(self, model="Default"):
         self.model = model
 
     async def send_message_stream(
