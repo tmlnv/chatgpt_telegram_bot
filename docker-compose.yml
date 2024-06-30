@@ -9,7 +9,7 @@ services:
       context: "."
       dockerfile: Dockerfile
     volumes:
-      - sqlite-volume:/code/db
+      - sqlite-volume:/app/db
     depends_on:
       - g4f
 
@@ -24,7 +24,7 @@ services:
     volumes:
       - sqlite-volume:/data
     env_file:
-      - config/config.env
+      - src/config/config.env
 
   g4f:
     container_name: g4f
